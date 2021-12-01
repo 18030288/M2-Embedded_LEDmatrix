@@ -30,13 +30,13 @@ uses the light-modulating properties of liquid crystals combined with polarizers
 
 
 Weakness :
-1. Requires handson experience about Embedded programmi
- 
+1. this system required external power supply. 
+
 Opportunities :
-1.
+1.Can upgrade this system with new and upcoming tecnologys.
 
 Threats :
-1.
+1. In worst case if the systems firmware gests defected it is very hard to unlock this system
 
 ## 4W's and 1'H
 4W's
@@ -54,8 +54,10 @@ Where : We can use this system where security is needed.
 
 1'H
 
-How : This project is implemented by using functionalities of c.
-
+How : This project is implemented by using 1.avr microcontroller atmega_328.
+                                           2. 16x2 LCD display
+                                           3. 4x4 matrix keypad
+                                           4. solonoid
 
 
 ## Detail Requirements :
