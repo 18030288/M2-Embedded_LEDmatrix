@@ -26,29 +26,31 @@ uses the light-modulating properties of liquid crystals combined with polarizers
 
  Strength :
 1. Low cost system
+2. Strength : Gives experience of working with ATmega328 microcontroller and do simulation.
+
 
 Weakness :
-1. This game can be addictive.
+1. Requires handson experience about Embedded programmi
  
 Opportunities :
-1. Computer gaming.
+1.
 
 Threats :
-1. Game can crash due to some technical erroes.
+1.
 
 ## 4W's and 1'H
 4W's
 
-Who : Any one can play this game
+Who : Any one can use this device.
 
 
-What : Virtual medium to  play the game.
+What : Digital security system.
 
 
-When : This game can be played whenever you are feeling bored or want to figure out ways  and outcome of the game. 
+When : To eliminate the traditional mechanical lock system   . 
 
 
-Where : Can be made availabel on sites.
+Where : We can use this system where security is needed.
 
 1'H
 
