@@ -26,7 +26,7 @@ uses the light-modulating properties of liquid crystals combined with polarizers
 
  Strength :
 1. Low cost system
-2. Strength : Gives experience of working with ATmega328 microcontroller and do simulation.
+2. Gives experience of working with ATmega328 microcontroller and do simulation.
 
 
 Weakness :
