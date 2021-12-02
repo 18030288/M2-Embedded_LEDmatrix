@@ -1,222 +1,256 @@
-#define F_CPU 16000000UL
 
-#include <avr/interrupt.h>
-#include <avr/io.h>
-#include <string.h>
-#include <util/delay.h>
+#include <reg51.h>
 
-#define keypadDirectionRegisterR DDRB
-#define keypadPortControlR PORTB
-#define keypadPortValueR PINB
+// connected pins
+// keypad rows
+sbit keyrow1 = P2 ^ 0;
+sbit keyrow2 = P2 ^ 1;
+sbit keyrow3 = P2 ^ 2;
+sbit keyrow4 = P2 ^ 3;
+//keypad column
+sbit keycolumn1 = P3 ^ 0;
+sbit keycolumn2 = P3 ^ 1;
+sbit keycolumn3 = P3 ^ 2;
 
-#define keypadDirectionRegisterC DDRC
-#define keypadPortControlC PORTC
-#define keypadPortValueC PINC
+// motor pins
+sbit motorpin1 = P3 ^ 3;
+sbit motorpin2 = P3 ^ 4;
 
-#define ctrl PORTD // We are using port D
-#define en 2       // enable signal pin 2
-#define rw 1       // read/write signal pin 1
-#define rs 0       // register select signal pin 0
+// led pins
+sbit rs = P3 ^ 5;
+sbit rw = P3 ^ 6;
+sbit en = P3 ^ 7;
 
-void lcd_command(unsigned char cmd);
-void lcd_init(void);
-void lcd_data(unsigned char data);
-void lcdCommand(char);
-void lcdData(char);
-void lcd_print(unsigned char *str);
-void lcd_gotoxy(unsigned char x, unsigned char y);
-void lcd_update_time(void);
-void keypadScan(void);
+//functions
+void lcdcmd(unsigned char);
+void lcddat(unsigned char);
+void lcddisplay(unsigned char *q);
+char keypad();
+void check();
+void delay(unsigned int);
+unsigned char pin[] = {"12345"};
+unsigned char Epin[5];
 
-int main() {
-	DDRD = 0xFF; // Setting DDRD to output // setting for port D
-	lcd_init();  // initialization of LCD function
-	_delay_ms(30);
+// main function
+void main()
+{
+    lcdcmd(0x0F); //decimal value: 15
+    lcdcmd(0x38); //decimal value: 56
+    lcdcmd(0x01); //decimal value: 1
 
-	lcd_gotoxy(1, 1);         // Go to the location 1,1 of lcd
-	lcd_print("Press any Key"); // Print the text
-	lcd_gotoxy(1, 2);         // Go to the location 1,2 of lcd
-
-	// Keypad initialization
-	keypadDirectionRegisterR = (1<<0) | (1<<1) | (1<<2) | (1<<3);
-	keypadDirectionRegisterC = (0<<0) | (0<<1) | (0<<2) | (0<<3);
-
-	keypadPortControlR = (0<<0) | (0<<1) | (0<<2) | (0<<3);
-	keypadPortControlC = (1<<0) | (1<<1) | (1<<2) | (1<<3);
-	
-	while (1) {
-		keypadScan();
-	};
-
-	return 0;
+    while (1)
+    {
+        unsigned int i = 0;
+        lcdcmd(0x80); //decimal value: 128
+        lcddisplay("ENTER PIN NUMBER");
+        delay(1000);
+        lcdcmd(0xc0); //decimal value: 192
+        while (pin[i] != '\0')
+        {
+            Epin[i] = keypad();
+            delay(1000);
+            i++;
+        }
+        check();
+    }
 }
 
-void keypadScan(){
-	
-	// Store value for column
-	uint8_t keyPressCodeC = keypadPortValueC;
-	
-	keypadDirectionRegisterC ^= (1<<0) | (1<<1) | (1<<2) | (1<<3);
-	keypadDirectionRegisterR ^= (1<<0) | (1<<1) | (1<<2) | (1<<3);
-	
-	keypadPortControlC ^= (1<<0) | (1<<1) | (1<<2) | (1<<3);
-	keypadPortControlR ^= (1<<0) | (1<<1) | (1<<2) | (1<<3);
-	
-	_delay_ms(5);
-	
-	// Store value for row
-	int temp = keypadPortValueR;
-	uint8_t keyPressCodeR = temp << 4;
-	
-	// Add value for column and row
-	uint8_t keyPressCode = keyPressCodeC | keyPressCodeR;
-	
-	uint8_t blinkDuration = 0;
-	
-	// Comparison and resultant action
-	
-	// Column one
-	if(keyPressCode == 0b01111110){
-		_delay_ms(5);
-		lcd_print("1");
-	}
-	if(keyPressCode == 0b10111110){
-		_delay_ms(5);
-		lcd_print("4");
-	}
-	if(keyPressCode == 0b11011110){
-		_delay_ms(5);
-		lcd_print("7");
-	}
-	if(keyPressCode == 0b11101110){
-		_delay_ms(5);
-		lcd_print("*");
-	}
-	
-	// Column two
-	if(keyPressCode == 0b01111101){
-		_delay_ms(5);
-		lcd_print("2");
-	}
-	if(keyPressCode == 0b10111101){
-		_delay_ms(5);
-		lcd_print("5");
-	}
-	if(keyPressCode == 0b11011101 ){
-		_delay_ms(5);
-		lcd_print("8");;
-	}
-	if(keyPressCode == 0b11101101 ){
-		_delay_ms(5);
-		lcd_print("0");
-	}
-	
-	// Column three
-	if(keyPressCode == 0b1111011){
-		_delay_ms(5);
-		lcd_print("3");
-	}
-	if(keyPressCode == 0b10111011){
-		_delay_ms(5);
-		lcd_print("6");;
-	}
-	if(keyPressCode == 0b11011011){
-		_delay_ms(5);
-		lcd_print("9");
-	}
-	if(keyPressCode == 0b11101011){
-		_delay_ms(10);
-		lcd_print("#");
-	}
-	
-	// Column four
-	if(keyPressCode == 0b01110111){
-		_delay_ms(5);
-		lcd_print("A");
-	}
-	if(keyPressCode == 0b10110111){
-		_delay_ms(5);
-		lcd_print("B");
-	}
-	if(keyPressCode == 0b11010111){
-		_delay_ms(5);
-		lcd_print("C");
-	}
-	if(keyPressCode == 0b11100111){
-		_delay_ms(5);
-		lcd_print("D");
-	}
-	
+//delay function
+void delay(unsigned int j)
+{
+    int a, b;
+    for (a = 0; a < j; a++)
+    {
+        for (b = 0; b < 10; b++)
+            ;
+    }
 }
 
-// Function moving to a given position on the LCD screen
-void lcd_gotoxy(unsigned char x, unsigned char y) {
-	unsigned char firstCharAdr[] = {0x80, 0xC0, 0x94, 0xD4};
-	lcdCommand(firstCharAdr[y - 1] + x - 1);
-	_delay_ms(0.1);
+// lcd commands functions
+void lcdcmd(unsigned char A)
+{
+    P1 = A;
+    rs = 0;
+    rw = 0;
+    en = 1;
+    delay(1000);
+    en = 0;
 }
 
-void lcd_init(void) {
-	lcdCommand(0x02); // To initialize LCD in 4-bit mode.
-	_delay_ms(1);
-	lcdCommand(0x28); // To initialize LCD in 2 lines, 5X7 dots and 4bit mode.
-	_delay_ms(1);
-	lcdCommand(0x01); // Clear LCD
-	_delay_ms(1);
-	lcdCommand(0x0E); // Turn on cursor ON
-	_delay_ms(1);
-	lcdCommand(0x80); // —8 go to first line and –0 is for 0th position
-	_delay_ms(1);
-	return;
+//lcd data function
+
+void lcddat(unsigned char i)
+{
+    P1 = i;
+    rs = 1;
+    rw = 0;
+    en = 1;
+    delay(1000);
+    en = 0;
 }
 
-void lcdCommand(char cmd_value) {
-	char cmd_value1;
-	cmd_value1 = cmd_value & 0xF0;          // Mask lower nibble
-	// because PD4-PD7 pins are used.
-	lcd_command(cmd_value1);                // Send to LCD
-	cmd_value1 = ((cmd_value << 4) & 0xF0); // Shift 4-bit and mask
-	lcd_command(cmd_value1);                // Send to LCD
+//lcd display charecters function
+
+void lcddisplay(unsigned char *q)
+{
+    int k;
+    for (k = 0; q[k] != '\0'; k++)
+    {
+        lcddat(q[k]);
+    }
+    delay(10000);
 }
 
-void lcdData(char data_value) {
-	char data_value1;
-	data_value1 = data_value & 0xF0;          // Mask lower nibble
-	lcd_data(data_value1);                    // because PD4-PD7 pins are used.
-	data_value1 = ((data_value << 4) & 0xF0); // Shift 4-bit and mask
-	lcd_data(data_value1);                    // Send to LCD
+// assign keypad character value function
+
+char keypad()
+{
+    int x = 0;
+    while (x == 0)
+    {
+        // assign values for first row
+        keyrow1 = 0;
+        keyrow2 = 1;
+        keyrow3 = 1;
+        keyrow4 = 1;
+        if (keycolumn1 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '1';
+        }
+        if (keycolumn2 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '2';
+        }
+        if (keycolumn3 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '3';
+        }
+        // assign values for second row
+        keyrow1 = 1;
+        keyrow2 = 0;
+        keyrow3 = 1;
+        keyrow4 = 1;
+
+        if (keycolumn1 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '4';
+        }
+        if (keycolumn2 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '5';
+        }
+        if (keycolumn3 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '6';
+        }
+
+        // assign values for third row
+        keyrow1 = 1;
+        keyrow2 = 1;
+        keyrow3 = 0;
+        keyrow4 = 1;
+        if (keycolumn1 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '7';
+        }
+        if (keycolumn2 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '8';
+        }
+        if (keycolumn3 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '9';
+        }
+
+        // assign values for forth row
+        keyrow1 = 1;
+        keyrow2 = 1;
+        keyrow3 = 1;
+        keyrow4 = 0;
+
+        if (keycolumn1 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '*';
+        }
+        if (keycolumn2 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '0';
+        }
+        if (keycolumn3 == 0)
+        {
+            lcddat('*');
+            delay(1000);
+            x = 1;
+            return '#';
+        }
+    }
 }
 
-void lcd_command(unsigned char cmd) {
-	ctrl = cmd;
-	ctrl &= ~(1 << rs); // RS = 0 for command
-	ctrl &= ~(1 << rw); // RW = 0 for write
-	ctrl |= (1 << en);  // EN = 1 for High to Low pulse
-	_delay_ms(1);
-	ctrl &= ~(1 << en); // EN = 0 for High to Low pulse
-	_delay_ms(40);
-	return;
+// password check function and run the door motor
+
+void check()
+{
+    //  compare the input value with the assign password value
+    if (pin[0] == Epin[0] && pin[1] == Epin[1] && pin[2] == Epin[2] && pin[3] == Epin[3] && pin[4] == Epin[4])
+    {
+        delay(1000);
+        lcdcmd(0x01); //decimal value: 1
+        lcdcmd(0x81); //decimal value: 129
+        // show pin is correct
+        lcddisplay("PIN CORRECT");
+        delay(1000);
+        // door motor will run
+        motorpin1 = 1;
+        motorpin2 = 0;
+        lcdcmd(0xc1); //decimal value: 193
+        // show the door is unlocked
+        lcddisplay("DOOR OPENED");
+        delay(10000);
+        motorpin1 = 1;
+        motorpin2 = 0;
+        lcdcmd(0x01); //decimal value: 1
+    }
+    else
+    {
+        lcdcmd(0x01); //decimal value: 1
+        lcdcmd(0x80); //decimal value: 128
+        lcddisplay("WRONG PIN");
+        delay(1000);
+        lcdcmd(0x01); //decimal value: 1
+    }
 }
 
-void lcd_data(unsigned char data) {
-	ctrl = data;
-	ctrl |= (1 << rs);  // RS = 1 for data
-	ctrl &= ~(1 << rw); // RW = 0 for write
-	ctrl |= (1 << en);  // EN = 1 for High to Low pulse
-	_delay_ms(1);
-	ctrl &= ~(1 << en); // EN = 0 for High to Low Pulse
-	_delay_ms(40);
-	return;
-}
-
-void lcd_print(
-unsigned char *str) { // store address value of the string in pointer *str
-	int i = 0;
-	while (str[i] !=
-	'\0') {     // loop will go on till the NULL character in the string
-		lcdData(str[i]); // sending data on LCD byte by byte
-		i++;
-	}
-	return;
-}
-
+// end
